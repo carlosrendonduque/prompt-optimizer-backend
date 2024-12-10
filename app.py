@@ -43,5 +43,48 @@ def generate():
         # Handle errors gracefully
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/evaluate', methods=['POST'])
+def evaluate_prompt():
+    try:
+        data = request.json
+        prompt = data.get("prompt", "")
+
+        # Evaluation criteria
+        # Clarity: Checks if the prompt includes task-defining keywords or sufficient length.
+        clarity_keywords = ["explain", "summarize", "describe", "list", "analyze", "write"]
+        clarity = (
+            "Clarity"
+            if any(keyword in prompt.lower() for keyword in clarity_keywords) and len(prompt.split()) > 3
+            else "Unclear"
+        )
+
+        # Specificity: Checks if the prompt provides sufficient context or detail.
+        specificity = (
+            "Specific"
+            if len(prompt.split()) > 8 and any(char in prompt for char in ["?", ".", ":"])
+            else "Vague"
+        )
+
+        # Structure: Checks if the prompt includes formatting cues or structural indicators.
+        structure_keywords = ["bullet points", "steps", "format", "outline", ":"]
+        structure = (
+            "Well-structured"
+            if any(keyword in prompt.lower() for keyword in structure_keywords)
+            else "Needs Structure"
+        )
+
+        # Combine evaluation results
+        feedback = [
+            {"criterion": "Clarity", "score": clarity},
+            {"criterion": "Specificity", "score": specificity},
+            {"criterion": "Structure", "score": structure}
+        ]
+
+        return jsonify({"evaluation": feedback})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
