@@ -1,15 +1,14 @@
 from flask import Flask, request, jsonify
-import openai
 from dotenv import load_dotenv
+import openai
 import os
 
-# Load environment variables from the .env file
+# Load environment variables
 load_dotenv()
 
-# Retrieve the OpenAI API key from .env
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
+# Initialize Flask
 app = Flask(__name__)
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route('/api/generate', methods=['POST'])
 def generate():
@@ -22,12 +21,15 @@ def generate():
     final_prompt = f"{prompt}\n\nTone: {tone}\nLength: {length}"
 
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=final_prompt,
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Replace with the appropriate model
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": final_prompt}
+            ],
             max_tokens=150
         )
-        return jsonify({"response": response.choices[0].text.strip()})
+        return jsonify({"response": response['choices'][0]['message']['content']})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
