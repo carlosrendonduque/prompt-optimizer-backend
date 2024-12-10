@@ -26,15 +26,18 @@ def generate():
 
         # Use OpenAI's latest API for chat completions
         completion = openai.chat.completions.create(
-            model="gpt-4o",  # Replace with the correct model name (e.g., "gpt-4o-mini")
+            model="gpt-4o",  # Replace with the correct model name
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt}
             ]
         )
 
+        # Correctly access the response content
+        response_content = completion.choices[0].message.content
+
         # Return the generated content as the response
-        return jsonify({"response": completion["choices"][0]["message"]["content"]})
+        return jsonify({"response": response_content})
 
     except Exception as e:
         # Handle errors gracefully
