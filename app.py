@@ -22,7 +22,7 @@ def generate():
         length = data.get("length", "medium")
 
         # Construct the system message based on tone
-        system_message = f"You are a helpful assistant with a {tone} tone."
+        system_message = f"You are a helpful assistant with a {tone} tone. Please generate a response that is {length} in length."
 
         # Use OpenAI's latest API for chat completions
         completion = openai.chat.completions.create(
