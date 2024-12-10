@@ -3,9 +3,11 @@ from dotenv import load_dotenv
 import os
 import openai
 from flask_cors import CORS
+import anthropic
+
 # Load environment variables
 load_dotenv()
-
+#anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 # Initialize Flask
 app = Flask(__name__)
 CORS(app)
@@ -84,6 +86,89 @@ def evaluate_prompt():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/computer_use', methods=['POST'])
+def computer_use():
+    try:
+        # Parse user input
+        data = request.json
+        user_prompt = data.get("prompt", "")
+        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+        # Send request to Anthropic API
+        response = client.beta.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            tools=[
+                {
+                    "type": "computer_20241022",
+                    "name": "computer",
+                    "display_width_px": 1024,
+                    "display_height_px": 768,
+                    "display_number": 1,
+                },
+                {
+                    "type": "text_editor_20241022",
+                    "name": "str_replace_editor",
+                },
+                {
+                    "type": "bash_20241022",
+                    "name": "bash",
+                },
+            ],
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ],
+            betas=["computer-use-2024-10-22"],
+        )
+
+        # Extract the relevant tool input from the response content
+        tool_input = None
+        for block in response.content:
+            # Check if the block is a BetaToolUseBlock
+            if hasattr(block, "type") and block.type == "tool_use":
+                tool_input = block.input
+                break
+
+        # If no tool input is found, return an appropriate error
+        if not tool_input:
+            return jsonify({"error": "No tool input found in the response"}), 400
+
+        # Simulate using the tool (e.g., create a file or execute a command)
+        result = execute_tool(tool_input)
+
+        return jsonify({"tool_input": tool_input, "tool_result": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+import os
+
+def execute_tool(tool_input):
+    """
+    Executes the tool command based on the provided input.
+    """
+    try:
+        command = tool_input.get("command")
+        path = tool_input.get("path")
+        file_text = tool_input.get("file_text")
+
+        # Simulate file creation as an example
+        if command == "create" and path and file_text:
+            # Ensure the directory exists
+            directory = os.path.dirname(path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+            # Create the file
+            with open(path, "w") as f:
+                f.write(file_text)
+            return f"File '{path}' created successfully with content: {file_text}"
+
+        return "Tool command not recognized or incomplete"
+    except Exception as e:
+        return f"Error executing tool: {str(e)}"
 
 
 if __name__ == "__main__":
