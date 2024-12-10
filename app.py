@@ -21,22 +21,20 @@ def generate():
         tone = data.get("tone", "neutral")
         length = data.get("length", "medium")
 
-        # Create a structured message prompt for chat completion
-        messages = [
-            {"role": "system", "content": f"You are a helpful assistant with a {tone} tone."},
-            {"role": "user", "content": prompt}
-        ]
+        # Construct the system message based on tone
+        system_message = f"You are a helpful assistant with a {tone} tone."
 
-        # Use the OpenAI Chat API to generate a response
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Replace with the model you want to use, e.g., "gpt-4o" or "gpt-3.5-turbo"
-            messages=messages,
-            max_tokens=150,
-            temperature=0.7
+        # Use OpenAI's latest API for chat completions
+        completion = openai.chat.completions.create(
+            model="gpt-4o",  # Replace with the correct model name (e.g., "gpt-4o-mini")
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+            ]
         )
 
-        # Return the generated content to the client
-        return jsonify({"response": response["choices"][0]["message"]["content"]})
+        # Return the generated content as the response
+        return jsonify({"response": completion["choices"][0]["message"]["content"]})
 
     except Exception as e:
         # Handle errors gracefully
